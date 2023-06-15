@@ -1,3 +1,4 @@
+use nerd2::send_chat;
 use poise::serenity_prelude as serenity;
 
 struct Data {} // User data, which is stored and accessible in all command invocations
@@ -47,7 +48,10 @@ async fn chat(ctx: Context<'_>) -> Result<(), Error> {
         .create_public_thread(ctx, message_id, |thread| thread.name(value))
         .await?;
     let reply = thread.await_reply(ctx).await.unwrap(); // TODO: make it not unwrap
+    let text = &reply.content;
     dbg!(&reply);
+    let answer = send_chat(text).await?;
+    thread.say(ctx, answer).await?;
     Ok(())
 }
 
@@ -69,7 +73,8 @@ async fn main() {
         },
         ..Default::default()
     };
-    let intents = serenity::GatewayIntents::non_privileged();
+    let intents =
+        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
     let framework = poise::Framework::builder()
         .options(options)
         .token(token)
