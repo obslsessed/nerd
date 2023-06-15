@@ -16,18 +16,74 @@ async fn age(
     Ok(())
 }
 
+/// chat
+#[poise::command(slash_command, prefix_command)]
+async fn chat(ctx: Context<'_>) -> Result<(), Error> {
+    let channel = ctx.channel_id();
+    // let handle = ctx.say("pick a model (in the future)").await?;
+    let handle = ctx
+        .send(|f| {
+            f.components(|f| {
+                f.create_action_row(|f| {
+                    f.create_select_menu(|f| {
+                        f.custom_id("hi")
+                            .options(|f| f.create_option(|f| f.value("hi").label("test")))
+                    })
+                })
+            })
+        })
+        .await?;
+    let message = handle.message().await?;
+    let interaction = message.await_component_interaction(ctx).await.unwrap(); // TODO: make it not unwrap
+    let value = &interaction.data.values[0];
+    interaction
+        .create_interaction_response(ctx, |f| {
+            f.kind(serenity::InteractionResponseType::UpdateMessage)
+                .interaction_response_data(|f| f.content(value).components(|f| f))
+        })
+        .await?;
+    let message_id = message.id;
+    let thread = channel
+        .create_public_thread(ctx, message_id, |thread| thread.name(value))
+        .await?;
+    let reply = thread.await_reply(ctx).await.unwrap(); // TODO: make it not unwrap
+    dbg!(&reply);
+    Ok(())
+}
+
+const TEST_SERVER_ID: u64 = 1113998071194456195;
+
+// TODO: webhooks are fake users
+// TODO: modals for creating/editing characters?
+
 #[tokio::main]
 async fn main() {
+    let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
+    let options = poise::FrameworkOptions {
+        commands: vec![age(), chat()],
+        event_handler: |_ctx, event, _framework, _data| {
+            Box::pin(async move {
+                println!("Got an event in event handler: {:?}", event.name());
+                Ok(())
+            })
+        },
+        ..Default::default()
+    };
+    let intents = serenity::GatewayIntents::non_privileged();
     let framework = poise::Framework::builder()
-        .options(poise::FrameworkOptions {
-            commands: vec![age()],
-            ..Default::default()
-        })
-        .token(std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN"))
-        .intents(serenity::GatewayIntents::non_privileged())
+        .options(options)
+        .token(token)
+        .intents(intents)
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                // don't need to register globally, but maybe eventually lol
+                // poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                poise::builtins::register_in_guild(
+                    ctx,
+                    &framework.options().commands,
+                    poise::serenity_prelude::GuildId(TEST_SERVER_ID),
+                )
+                .await?;
                 Ok(Data {})
             })
         });
