@@ -1,7 +1,7 @@
 mod commands;
 
 use crate::commands::chat::chat;
-use crate::commands::modal::create;
+use crate::commands::create::create;
 
 use nerd2::Data;
 use nerd2::TEST_SERVER_ID;
