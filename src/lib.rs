@@ -5,6 +5,8 @@ use async_openai::{
 };
 use poise::Modal;
 
+pub const TEST_SERVER_ID: u64 = 1113998071194456195;
+
 pub type ApplicationContext<'a> = poise::ApplicationContext<'a, Data, Error>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
