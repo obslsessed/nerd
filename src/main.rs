@@ -1,9 +1,16 @@
 use nerd2::send_chat;
+use nerd2::{ApplicationContext, Context, Data, Error, MyModal};
 use poise::serenity_prelude as serenity;
+use poise::Modal;
 
-struct Data {} // User data, which is stored and accessible in all command invocations
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
+/// create a character
+#[poise::command(slash_command)]
+pub async fn modal(ctx: ApplicationContext<'_>) -> Result<(), Error> {
+    let data = MyModal::execute(ctx).await?;
+    println!("Got data: {:?}", data);
+
+    Ok(())
+}
 
 /// Displays your or another user's account creation date
 #[poise::command(slash_command, prefix_command)]
@@ -64,7 +71,7 @@ const TEST_SERVER_ID: u64 = 1113998071194456195;
 async fn main() {
     let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
     let options = poise::FrameworkOptions {
-        commands: vec![age(), chat()],
+        commands: vec![age(), chat(), modal()],
         event_handler: |_ctx, event, _framework, _data| {
             Box::pin(async move {
                 println!("Got an event in event handler: {:?}", event.name());
