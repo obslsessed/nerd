@@ -1,7 +1,7 @@
 mod commands;
 
 use crate::commands::chat::chat;
-use crate::commands::modal::modal;
+use crate::commands::modal::create;
 
 use nerd2::Data;
 use nerd2::TEST_SERVER_ID;
@@ -14,7 +14,7 @@ use poise::serenity_prelude as serenity;
 async fn main() {
     let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
     let options = poise::FrameworkOptions {
-        commands: vec![chat(), modal()],
+        commands: vec![chat(), create()],
         event_handler: |_ctx, event, _framework, _data| {
             Box::pin(async move {
                 println!("Got an event in event handler: {:?}", event.name());
