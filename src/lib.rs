@@ -11,7 +11,7 @@ pub async fn send_chat(input: &str) -> Result<String> {
         .messages([
             ChatCompletionRequestMessageArgs::default()
                 .role(Role::System)
-                .content("Answer with only 5 words or less.")
+                .content("Answer in only 1 word.")
                 .build()?,
             ChatCompletionRequestMessageArgs::default()
                 .role(Role::User)
