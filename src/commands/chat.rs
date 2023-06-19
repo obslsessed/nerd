@@ -14,7 +14,7 @@ pub async fn chat(ctx: Context<'_>) -> Result<(), Error> {
     let reply = thread.await_reply(ctx).await.unwrap(); // TODO: make it not unwrap
     let text = &reply.content;
     dbg!(&reply);
-    let answer = send_chat(text).await?;
+    let answer = send_chat(text, character).await?;
     thread.say(ctx, answer).await?;
     Ok(())
 }

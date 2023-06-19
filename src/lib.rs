@@ -52,14 +52,15 @@ pub fn create_directories() -> Result<()> {
     Ok(())
 }
 
-pub async fn send_chat(input: &str) -> Result<String> {
+pub async fn send_chat(input: &str, character: Character) -> Result<String> {
     let client = Client::new();
+    let prompt = character.prompt.unwrap_or("".into());
     let request = CreateChatCompletionRequestArgs::default()
         .model("gpt-3.5-turbo-0613")
         .messages([
             ChatCompletionRequestMessageArgs::default()
                 .role(Role::System)
-                .content("Answer in only 1 word.")
+                .content(prompt)
                 .build()?,
             ChatCompletionRequestMessageArgs::default()
                 .role(Role::User)
