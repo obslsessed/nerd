@@ -1,19 +1,27 @@
+use std::{
+    fs::{create_dir, read_dir, File},
+    io::{ErrorKind, Read},
+};
+
 use anyhow::Result;
 use async_openai::{
     types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role},
     Client,
 };
 use poise::{serenity_prelude::ReactionType, Modal};
+use serde::{Deserialize, Serialize};
 
 pub const TEST_SERVER_ID: u64 = 1113998071194456195;
-pub const DATABASE_PATH: &str = "nerd/";
+pub const DATABASE_PATH: &str = "nerd";
+pub const CHARACTERS_PATH: &str = "nerd/characters";
+pub const CONVERSATIONS_PATH: &str = "nerd/conversations";
 
 pub type ApplicationContext<'a> = poise::ApplicationContext<'a, Data, Error>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub struct Data {} // User data, which is stored and accessible in all command invocations
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Character {
     pub name: String,
     pub prompt: Option<String>,
@@ -21,15 +29,27 @@ pub struct Character {
 }
 
 #[derive(Debug, Modal)]
-#[name = "character creator"] // Struct name by default
+#[name = "character creator"]
 pub struct MyModal {
-    #[name = "name"] // Field name by default
-    #[placeholder = "the character's name"] // No placeholder by default
+    #[name = "name"]
+    #[placeholder = "the character's name"]
     pub name: String,
     #[name = "prompt"]
     #[placeholder = "the character's prompt"]
-    #[paragraph] // Switches from single-line input to multiline text box
-    pub prompt: Option<String>, // Option means optional input
+    #[paragraph]
+    pub prompt: Option<String>,
+}
+
+pub fn create_directories() -> Result<()> {
+    let paths = vec![DATABASE_PATH, CHARACTERS_PATH, CONVERSATIONS_PATH];
+    for path in paths {
+        if let Err(error) = create_dir(path) {
+            if error.kind() != ErrorKind::AlreadyExists {
+                return Err(error.into());
+            }
+        };
+    }
+    Ok(())
 }
 
 pub async fn send_chat(input: &str) -> Result<String> {
@@ -87,4 +107,19 @@ pub async fn set_emoji_from_reaction(
         true => Ok(None),
         false => Ok(Some(reaction.to_owned())),
     }
+}
+
+pub fn get_characters() -> Result<Vec<Character>> {
+    let character_names = read_dir(CHARACTERS_PATH)?;
+    let characters = character_names
+        .map(|entry| {
+            let path = entry.unwrap().path();
+            let mut file = File::open(path).unwrap();
+            let mut string = String::new();
+            file.read_to_string(&mut string).unwrap();
+            let character = serde_json::from_str::<Character>(&string).unwrap();
+            character
+        })
+        .collect::<Vec<Character>>();
+    Ok(characters)
 }
