@@ -3,6 +3,8 @@ mod commands;
 use crate::commands::chat::chat;
 use crate::commands::create::create;
 
+use anyhow::Result;
+use nerd2::create_directories;
 use nerd2::Data;
 use nerd2::TEST_SERVER_ID;
 use poise::serenity_prelude as serenity;
@@ -11,8 +13,9 @@ use poise::serenity_prelude as serenity;
 // TODO: modals for creating/editing characters?
 
 #[tokio::main]
-async fn main() {
-    let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
+async fn main() -> Result<()> {
+    create_directories()?;
+    let token = std::env::var("DISCORD_TOKEN")?;
     let options = poise::FrameworkOptions {
         commands: vec![chat(), create()],
         event_handler: |_ctx, event, _framework, _data| {
@@ -43,5 +46,5 @@ async fn main() {
             })
         });
 
-    framework.run().await.unwrap();
+    Ok(framework.run().await?)
 }
