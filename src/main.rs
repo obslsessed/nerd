@@ -4,6 +4,8 @@ use commands::chat::chat;
 use commands::create::create;
 
 use anyhow::Result;
+use commands::todo::paginate;
+use commands::todo::say;
 use nerd2::create_directories;
 use nerd2::Data;
 use nerd2::TEST_SERVER_ID;
@@ -15,7 +17,7 @@ use poise::serenity_prelude as serenity;
 #[tokio::main]
 async fn main() -> Result<()> {
     create_directories()?;
-    let commands = vec![chat(), create()];
+    let commands = vec![chat(), create(), paginate(), say()];
     let token = std::env::var("DISCORD_TOKEN")?;
     let options = poise::FrameworkOptions {
         commands,

@@ -1,9 +1,9 @@
 // these are commands/features that i want to make/use in the future
 
-//wtf is rest?
-/// Echoes the string you give it
-///
-/// Demonstrates `#[rest]`
+use anyhow::Result;
+use nerd2::{Context, Error};
+
+// rest means use the entire rest of the message as this parameter
 #[poise::command(prefix_command, slash_command)]
 pub async fn say(
     ctx: Context<'_>,
