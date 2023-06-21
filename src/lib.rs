@@ -1,6 +1,7 @@
 use std::{
     fs::{create_dir, read_dir, File},
     io::{ErrorKind, Read, Write},
+    str::FromStr,
 };
 
 use anyhow::Result;
@@ -84,7 +85,7 @@ pub fn new_chat(character: &Character, thread_id: ChannelId) -> Result<()> {
     Ok(())
 }
 
-pub async fn send_chat(chat: CreateChatCompletionRequest, character: Character) -> Result<String> {
+pub async fn send_chat(chat: CreateChatCompletionRequest) -> Result<String> {
     let client = Client::new();
     let response = client.chat().create(chat).await?;
     dbg!(&response);
@@ -140,4 +141,18 @@ pub fn get_characters() -> Result<Vec<Character>> {
         })
         .collect::<Vec<Character>>();
     Ok(characters)
+}
+
+pub fn get_thread_ids() -> Result<Vec<ChannelId>> {
+    // todo: fix  this entire function
+    let threads = read_dir(CONVERSATIONS_PATH)?;
+    let thread_ids = threads
+        .map(|entry| {
+            let os_string = entry.unwrap().file_name();
+            let str = os_string.to_str().unwrap();
+            let channel_id = ChannelId::from_str(str).unwrap();
+            channel_id
+        })
+        .collect::<Vec<ChannelId>>();
+    Ok(thread_ids)
 }
