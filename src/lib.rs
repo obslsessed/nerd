@@ -18,13 +18,15 @@ use poise::{
 use serde::{Deserialize, Serialize};
 
 pub const TEST_SERVER_ID: u64 = 1113998071194456195;
+pub const NERD_BOT_ID: u64 = 1118700646791647262;
+pub const RYY_BOT_ID: u64 = 672957277032153108;
 pub const CHAT_MODEL: &str = "gpt-3.5-turbo-0613";
 pub const DATABASE_PATH: &str = "nerd";
 pub const CHARACTERS_PATH: &str = "nerd/characters";
 pub const CONVERSATIONS_PATH: &str = "nerd/conversations";
 
-pub type ApplicationContext<'a> = poise::ApplicationContext<'a, Data, Error>;
-pub type Context<'a> = poise::Context<'a, Data, Error>;
+pub type ApplicationContext<'a> = poise::ApplicationContext<'a, (), Error>;
+pub type Context<'a> = poise::Context<'a, (), Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub struct Data {} // User data, which is stored and accessible in all command invocations
 
