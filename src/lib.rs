@@ -1,17 +1,24 @@
 use std::{
     fs::{create_dir, read_dir, File},
-    io::{ErrorKind, Read},
+    io::{ErrorKind, Read, Write},
 };
 
 use anyhow::Result;
 use async_openai::{
-    types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role},
+    types::{
+        ChatCompletionRequestMessageArgs, CreateChatCompletionRequest,
+        CreateChatCompletionRequestArgs, Role,
+    },
     Client,
 };
-use poise::{serenity_prelude::ReactionType, Modal};
+use poise::{
+    serenity_prelude::{ChannelId, ReactionType},
+    Modal,
+};
 use serde::{Deserialize, Serialize};
 
 pub const TEST_SERVER_ID: u64 = 1113998071194456195;
+pub const CHAT_MODEL: &str = "gpt-3.5-turbo-0613";
 pub const DATABASE_PATH: &str = "nerd";
 pub const CHARACTERS_PATH: &str = "nerd/characters";
 pub const CONVERSATIONS_PATH: &str = "nerd/conversations";
@@ -52,24 +59,32 @@ pub fn create_directories() -> Result<()> {
     Ok(())
 }
 
-pub async fn send_chat(input: &str, character: Character) -> Result<String> {
-    let client = Client::new();
-    let prompt = character.prompt.unwrap_or("".into());
-    let request = CreateChatCompletionRequestArgs::default()
-        .model("gpt-3.5-turbo-0613")
-        .messages([
-            ChatCompletionRequestMessageArgs::default()
+pub fn new_chat(character: &Character, thread_id: ChannelId) -> Result<()> {
+    let chat = match &character.prompt {
+        None => CreateChatCompletionRequestArgs::default()
+            .model(CHAT_MODEL)
+            .build()?,
+        Some(prompt) => CreateChatCompletionRequestArgs::default()
+            .model(CHAT_MODEL)
+            .messages([ChatCompletionRequestMessageArgs::default()
                 .role(Role::System)
                 .content(prompt)
-                .build()?,
-            ChatCompletionRequestMessageArgs::default()
-                .role(Role::User)
-                .content(input)
-                .build()?,
-        ])
-        .build()?;
-    dbg!(&request);
-    let response = client.chat().create(request).await?;
+                .build()?])
+            .build()?,
+    };
+
+    let path = format!("{CONVERSATIONS_PATH}/{thread_id}");
+    let mut file = File::create(path)?;
+
+    let json = serde_json::to_string(&chat)?;
+    let bytes = json.as_bytes();
+    file.write(bytes)?;
+    Ok(())
+}
+
+pub async fn send_chat(chat: CreateChatCompletionRequest, character: Character) -> Result<String> {
+    let client = Client::new();
+    let response = client.chat().create(chat).await?;
     dbg!(&response);
     let content = response.choices.last().unwrap().message.content.clone(); // TODO: fix this mess
     Ok(content)
