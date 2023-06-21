@@ -3,9 +3,7 @@ use async_openai::types::{ChatCompletionRequestMessageArgs, CreateChatCompletion
 use nerd2::{get_characters, new_chat, send_chat};
 use nerd2::{Character, Context, Error};
 use nerd2::{CHARACTERS_PATH, CONVERSATIONS_PATH};
-use poise::serenity_prelude::{
-    self as serenity, CacheHttp, ChannelId, GuildChannel, Http, MessageId,
-};
+use poise::serenity_prelude::{self as serenity, CacheHttp, ChannelId, GuildChannel, MessageId};
 use std::fs::{read_to_string, write};
 
 /// chat
