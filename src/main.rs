@@ -1,7 +1,7 @@
 mod commands;
 
-use crate::commands::chat::chat;
-use crate::commands::create::create;
+use commands::chat::chat;
+use commands::create::create;
 
 use anyhow::Result;
 use nerd2::create_directories;
@@ -15,9 +15,10 @@ use poise::serenity_prelude as serenity;
 #[tokio::main]
 async fn main() -> Result<()> {
     create_directories()?;
+    let commands = vec![chat(), create()];
     let token = std::env::var("DISCORD_TOKEN")?;
     let options = poise::FrameworkOptions {
-        commands: vec![chat(), create()],
+        commands,
         event_handler: |_ctx, event, _framework, _data| {
             Box::pin(async move {
                 println!("Got an event in event handler: {:?}", event.name());
