@@ -39,7 +39,7 @@ async fn handle_chat(
         .build()?;
     chat.messages.push(input);
     dbg!(&chat);
-    let answer = send_chat(chat.clone(), character).await?;
+    let answer = send_chat(chat.clone()).await?;
     id.say(ctx, &answer).await?;
     let output = ChatCompletionRequestMessageArgs::default()
         .role(Role::Assistant)
