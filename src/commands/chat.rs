@@ -24,7 +24,7 @@ pub async fn chat(ctx: Context<'_>) -> Result<(), Error> {
 
 pub fn new_chat(character: &Character, id: impl Into<ChannelId>) -> Result<()> {
     let id = id.into();
-    let chat = match &character.prompt {
+    let chat = match &character.greeting {
         None => CreateChatCompletionRequestArgs::default()
             .model(CHAT_MODEL)
             .build()?,
@@ -70,12 +70,15 @@ async fn choose_character(ctx: Context<'_>) -> Result<(Character, MessageId), Er
                                 match character.emoji {
                                     Some(emoji) => f.create_option(|f| {
                                         f.value(&character.name)
-                                            .label(&character.prompt.unwrap_or("no prompt".into()))
+                                            .label(
+                                                &character.greeting.unwrap_or("no greeting".into()),
+                                            )
                                             .emoji(emoji)
                                     }),
                                     None => f.create_option(|f| {
-                                        f.value(&character.name)
-                                            .label(&character.prompt.unwrap_or("no prompt".into()))
+                                        f.value(&character.name).label(
+                                            &character.greeting.unwrap_or("no greeting".into()),
+                                        )
                                     }),
                                 };
                             }

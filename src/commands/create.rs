@@ -35,8 +35,10 @@ fn create_character_from_modal(modal: Option<MyModal>) -> Option<Character> {
         None => None,
         Some(data) => Some(Character {
             name: data.name,
-            prompt: data.prompt,
             emoji: None,
+            description: data.description,
+            greeting: data.greeting,
+            examples: None,
         }),
     }
 }

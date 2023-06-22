@@ -30,8 +30,10 @@ pub struct Data {} // User data, which is stored and accessible in all command i
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Character {
     pub name: String,
-    pub prompt: Option<String>,
     pub emoji: Option<ReactionType>,
+    pub description: Option<String>,
+    pub greeting: Option<String>,
+    pub examples: Option<Vec<String>>,
 }
 
 #[derive(Debug, Modal)]
@@ -40,10 +42,14 @@ pub struct MyModal {
     #[name = "name"]
     #[placeholder = "the character's name"]
     pub name: String,
-    #[name = "prompt"]
-    #[placeholder = "the character's prompt"]
+    #[name = "description"]
+    #[placeholder = "the character's description"]
     #[paragraph]
-    pub prompt: Option<String>,
+    pub description: Option<String>,
+    #[name = "greeting"]
+    #[placeholder = "the character's greeting"]
+    #[paragraph]
+    pub greeting: Option<String>,
 }
 
 pub fn create_directories() -> Result<()> {

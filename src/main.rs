@@ -37,7 +37,6 @@ struct Handler {
 #[serenity::async_trait]
 impl serenity::EventHandler for Handler {
     async fn message(&self, ctx: Context, message: serenity::Message) {
-        println!("running message");
         let threads = get_thread_ids().unwrap();
         let is_in_thread = threads.iter().any(|t| t == &message.channel_id);
         let is_user = message.author.id != NERD_BOT_ID;
