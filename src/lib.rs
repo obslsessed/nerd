@@ -1,18 +1,21 @@
 use std::{
-    fs::{create_dir, read_dir},
+    fs::{create_dir, read_dir, read_to_string, write},
     io::ErrorKind,
     str::FromStr,
+    sync::Arc,
 };
 
 use anyhow::Result;
 use async_openai::{
-    types::{ChatChoice, ChatCompletionResponseMessage, CreateChatCompletionRequest},
+    types::{
+        ChatChoice, ChatCompletionRequestMessageArgs, ChatCompletionResponseMessage,
+        CreateChatCompletionRequest, Role,
+    },
     Client,
 };
-use poise::{
-    serenity_prelude::{ChannelId, ReactionType},
-    Modal,
-};
+use poise::serenity_prelude::Context as SerenityContext;
+use poise::serenity_prelude::{ChannelId, Message, ReactionType};
+use poise::Modal;
 use serde::{Deserialize, Serialize};
 
 pub const TEST_SERVER_ID: u64 = 1113998071194456195;
@@ -65,6 +68,30 @@ pub fn create_directories() -> Result<()> {
         };
     }
     Ok(())
+}
+
+pub async fn remember_and_add_to_chat(ctx: &SerenityContext, message: &Message) {
+    let channel = message.channel_id;
+    let path = format!("{CONVERSATIONS_PATH}/{channel}");
+    let string = read_to_string(&path).unwrap();
+    let mut chat = serde_json::from_str::<CreateChatCompletionRequest>(&string).unwrap();
+    let input = ChatCompletionRequestMessageArgs::default()
+        .role(Role::User)
+        .content(&message.content)
+        .build()
+        .unwrap();
+    chat.messages.push(input);
+    let response = send_chat(chat.clone()).await.unwrap();
+    let output = ChatCompletionRequestMessageArgs::default()
+        .role(Role::User)
+        .content(&response)
+        .build()
+        .unwrap();
+    chat.messages.push(output);
+    dbg!(&chat);
+    let json = serde_json::to_string(&chat).unwrap();
+    write(&path, json).unwrap();
+    message.channel_id.say(&ctx, response).await.unwrap();
 }
 
 pub async fn send_chat(chat: CreateChatCompletionRequest) -> Result<String> {
