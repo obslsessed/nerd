@@ -1,25 +1,29 @@
+use nerd2::Character;
+use nerd2::{Context, Error};
+use nerd2::{CHARACTERS_PATH, CHAT_MODEL, CONVERSATIONS_PATH};
+
 use anyhow::Result;
 use async_openai::types::{
     ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role,
 };
-use nerd2::{get_characters, CHAT_MODEL};
-use nerd2::{Character, Context, Error};
-use nerd2::{CHARACTERS_PATH, CONVERSATIONS_PATH};
-use poise::serenity_prelude::{self as serenity, ChannelId, GuildChannel, MessageId};
-use std::fs::{read_to_string, File};
-use std::io::Write;
+
+use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{ChannelId, GuildChannel, MessageId};
+
+use std::fs::{read_dir, read_to_string, File};
+use std::io::{Read, Write};
 
 /// chat
 #[poise::command(slash_command, prefix_command)]
 pub async fn chat(ctx: Context<'_>) -> Result<(), Error> {
     let (character, message_id) = choose_character(ctx).await?;
     let thread = create_thread(&ctx, &message_id, &character.name).await?;
-    let thread_id = thread.id;
-    new_chat(&character, thread_id)?;
+    new_chat(&character, thread)?;
     Ok(())
 }
 
-pub fn new_chat(character: &Character, thread_id: ChannelId) -> Result<()> {
+pub fn new_chat(character: &Character, id: impl Into<ChannelId>) -> Result<()> {
+    let id = id.into();
     let chat = match &character.prompt {
         None => CreateChatCompletionRequestArgs::default()
             .model(CHAT_MODEL)
@@ -33,7 +37,7 @@ pub fn new_chat(character: &Character, thread_id: ChannelId) -> Result<()> {
             .build()?,
     };
 
-    let path = format!("{CONVERSATIONS_PATH}/{thread_id}");
+    let path = format!("{CONVERSATIONS_PATH}/{id}");
     let mut file = File::create(path)?;
 
     let json = serde_json::to_string(&chat)?;
@@ -96,4 +100,19 @@ async fn choose_character(ctx: Context<'_>) -> Result<(Character, MessageId), Er
     let character = serde_json::from_str(&string)?;
     let message_id = message.id;
     Ok((character, message_id))
+}
+
+fn get_characters() -> Result<Vec<Character>> {
+    let character_names = read_dir(CHARACTERS_PATH)?;
+    let characters = character_names
+        .map(|entry| {
+            let path = entry.unwrap().path();
+            let mut file = File::open(path).unwrap();
+            let mut string = String::new();
+            file.read_to_string(&mut string).unwrap();
+            let character = serde_json::from_str::<Character>(&string).unwrap();
+            character
+        })
+        .collect::<Vec<Character>>();
+    Ok(characters)
 }

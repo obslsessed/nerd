@@ -1,5 +1,7 @@
 mod commands;
 
+use anyhow::Result;
+
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::fs::write;
@@ -14,18 +16,15 @@ use commands::register::register;
 use commands::todo::paginate;
 use commands::todo::say;
 
-use anyhow::Result;
 use nerd2::create_directories;
 use nerd2::get_thread_ids;
 use nerd2::send_chat;
 use nerd2::Error;
 use nerd2::OWNER_USER_ID;
 use nerd2::{CONVERSATIONS_PATH, NERD_BOT_ID, RYY_BOT_ID};
+
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::Context;
-use poise::serenity_prelude::Interaction;
-use poise::serenity_prelude::Reaction;
-use poise::serenity_prelude::UserId;
+use poise::serenity_prelude::{Context, Interaction, Reaction, UserId};
 
 // TODO: webhooks are fake users
 // TODO: modals for creating/editing characters?

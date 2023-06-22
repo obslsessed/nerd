@@ -1,6 +1,6 @@
 use std::{
-    fs::{create_dir, read_dir, File},
-    io::{ErrorKind, Read},
+    fs::{create_dir, read_dir},
+    io::ErrorKind,
     str::FromStr,
 };
 
@@ -61,59 +61,8 @@ pub fn create_directories() -> Result<()> {
 pub async fn send_chat(chat: CreateChatCompletionRequest) -> Result<String> {
     let client = Client::new();
     let response = client.chat().create(chat).await?;
-    dbg!(&response);
     let content = response.choices.last().unwrap().message.content.clone(); // TODO: fix this mess
     Ok(content)
-}
-
-pub fn create_character_from_modal(modal: Option<MyModal>) -> Option<Character> {
-    match modal {
-        None => None,
-        Some(data) => Some(Character {
-            name: data.name,
-            prompt: data.prompt,
-            emoji: None,
-        }),
-    }
-}
-
-pub async fn set_emoji_from_reaction(
-    application_context: ApplicationContext<'_>,
-) -> Result<Option<ReactionType>> {
-    let serenity_context = application_context.serenity_context;
-    let poise_context = poise::Context::Application(application_context);
-
-    let cancel = ReactionType::Unicode("❌".into());
-
-    let handle = application_context
-        .say("react to this message with the character's emoji or x for none")
-        .await?;
-    let message = handle.message().await?;
-    message.react(serenity_context, cancel.clone()).await?;
-    let action = message.await_reaction(serenity_context).await.unwrap(); //TODO: make it not unwrap
-    handle.delete(poise_context).await?;
-    let reaction = &action.as_inner_ref().emoji;
-    let no_emoji = reaction == &cancel;
-
-    match no_emoji {
-        true => Ok(None),
-        false => Ok(Some(reaction.to_owned())),
-    }
-}
-
-pub fn get_characters() -> Result<Vec<Character>> {
-    let character_names = read_dir(CHARACTERS_PATH)?;
-    let characters = character_names
-        .map(|entry| {
-            let path = entry.unwrap().path();
-            let mut file = File::open(path).unwrap();
-            let mut string = String::new();
-            file.read_to_string(&mut string).unwrap();
-            let character = serde_json::from_str::<Character>(&string).unwrap();
-            character
-        })
-        .collect::<Vec<Character>>();
-    Ok(characters)
 }
 
 pub fn get_thread_ids() -> Result<Vec<ChannelId>> {
