@@ -1,4 +1,4 @@
-use nerd2::{Context, Error};
+use nerd::{Context, Error};
 
 #[poise::command(prefix_command)]
 pub async fn register(ctx: Context<'_>) -> Result<(), Error> {

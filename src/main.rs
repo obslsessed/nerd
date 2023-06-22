@@ -1,7 +1,7 @@
 mod commands;
 
 use anyhow::Result;
-use nerd2::remember_and_add_to_chat;
+use nerd::remember_and_add_to_chat;
 
 use std::collections::HashSet;
 
@@ -11,10 +11,10 @@ use commands::register::register;
 use commands::todo::paginate;
 use commands::todo::say;
 
-use nerd2::create_directories;
-use nerd2::get_thread_ids;
-use nerd2::Error;
-use nerd2::{NERD_BOT_ID, OWNER_USER_ID, RYY_BOT_ID};
+use nerd::create_directories;
+use nerd::get_thread_ids;
+use nerd::Error;
+use nerd::{NERD_BOT_ID, OWNER_USER_ID, RYY_BOT_ID};
 
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::{Context, Interaction, Reaction, UserId};

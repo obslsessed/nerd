@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 
-use nerd2::{Context, Error};
+use nerd::{Context, Error};
 
 // rest means use the entire rest of the message as this parameter
 #[poise::command(prefix_command, slash_command)]

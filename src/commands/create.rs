@@ -1,6 +1,6 @@
-use nerd2::CHARACTERS_PATH;
-use nerd2::{ApplicationContext, Error};
-use nerd2::{Character, MyModal};
+use nerd::CHARACTERS_PATH;
+use nerd::{ApplicationContext, Error};
+use nerd::{Character, MyModal};
 use poise::serenity_prelude::{ReactionType, Webhook};
 
 use std::fs::File;

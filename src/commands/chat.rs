@@ -1,6 +1,6 @@
-use nerd2::{update_webhook_channel_id, Character, Conversation};
-use nerd2::{Context, Error};
-use nerd2::{CHARACTERS_PATH, CHAT_MODEL, CONVERSATIONS_PATH};
+use nerd::{update_webhook_channel_id, Character, Conversation};
+use nerd::{Context, Error};
+use nerd::{CHARACTERS_PATH, CHAT_MODEL, CONVERSATIONS_PATH};
 
 use anyhow::Result;
 use async_openai::types::{
