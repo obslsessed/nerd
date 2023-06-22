@@ -25,7 +25,6 @@ use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::Context;
 use poise::serenity_prelude::Interaction;
 use poise::serenity_prelude::Reaction;
-use poise::serenity_prelude::Ready;
 use poise::serenity_prelude::UserId;
 
 // TODO: webhooks are fake users
@@ -119,11 +118,7 @@ impl serenity::EventHandler for Handler {
         )
         .await;
     }
-
-    async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("ready");
-    }
-    // For slash commands or edit tracking to work, forward interaction_create and message_update
+    // maybe forward message_update in the future for edit tracking
 }
 
 #[tokio::main]

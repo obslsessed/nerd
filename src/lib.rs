@@ -1,17 +1,11 @@
 use std::{
     fs::{create_dir, read_dir, File},
-    io::{ErrorKind, Read, Write},
+    io::{ErrorKind, Read},
     str::FromStr,
 };
 
 use anyhow::Result;
-use async_openai::{
-    types::{
-        ChatCompletionRequestMessageArgs, CreateChatCompletionRequest,
-        CreateChatCompletionRequestArgs, Role,
-    },
-    Client,
-};
+use async_openai::{types::CreateChatCompletionRequest, Client};
 use poise::{
     serenity_prelude::{ChannelId, ReactionType},
     Modal,
