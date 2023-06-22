@@ -98,7 +98,7 @@ pub async fn send_chat(chat: CreateChatCompletionRequest) -> Result<String> {
     let error_message = ChatCompletionResponseMessage {
         role: async_openai::types::Role::Assistant,
         content: error_text,
-    }
+    };
     let error_response = ChatChoice {
         message: error_message,
         index: 0,

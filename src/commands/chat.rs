@@ -24,15 +24,15 @@ pub async fn chat(ctx: Context<'_>) -> Result<(), Error> {
 
 pub fn new_chat(character: &Character, id: impl Into<ChannelId>) -> Result<()> {
     let id = id.into();
-    let chat = match &character.greeting {
+    let chat = match &character.description {
         None => CreateChatCompletionRequestArgs::default()
             .model(CHAT_MODEL)
             .build()?,
-        Some(prompt) => CreateChatCompletionRequestArgs::default()
+        Some(description) => CreateChatCompletionRequestArgs::default()
             .model(CHAT_MODEL)
             .messages([ChatCompletionRequestMessageArgs::default()
                 .role(Role::System)
-                .content(prompt)
+                .content(description)
                 .build()?])
             .build()?,
     };
@@ -67,18 +67,15 @@ async fn choose_character(ctx: Context<'_>) -> Result<(Character, MessageId), Er
                     f.create_select_menu(|f| {
                         f.custom_id("hi").options(|f| {
                             for character in characters {
+                                let mut greeting =
+                                    character.greeting.unwrap_or("no greeting".into());
+                                greeting.truncate(100);
                                 match character.emoji {
                                     Some(emoji) => f.create_option(|f| {
-                                        f.value(&character.name)
-                                            .label(
-                                                &character.greeting.unwrap_or("no greeting".into()),
-                                            )
-                                            .emoji(emoji)
+                                        f.value(&character.name).label(greeting).emoji(emoji)
                                     }),
                                     None => f.create_option(|f| {
-                                        f.value(&character.name).label(
-                                            &character.greeting.unwrap_or("no greeting".into()),
-                                        )
+                                        f.value(&character.name).label(greeting)
                                     }),
                                 };
                             }
