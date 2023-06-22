@@ -1,7 +1,7 @@
 use nerd2::CHARACTERS_PATH;
 use nerd2::{ApplicationContext, Error};
 use nerd2::{Character, MyModal};
-use poise::serenity_prelude::ReactionType;
+use poise::serenity_prelude::{ReactionType, Webhook};
 
 use std::fs::File;
 use std::io::Write;
@@ -20,6 +20,8 @@ pub async fn create(ctx: ApplicationContext<'_>) -> Result<(), Error> {
         if let Some(new_emoji) = emoji {
             character.emoji = Some(new_emoji);
         }
+        let webhook = create_webhook_from_character(ctx, &character).await?;
+        character.webhook = Some(webhook);
         let path = format!("{}/{}", CHARACTERS_PATH, character.name);
         let mut file = File::create(path)?;
         let json = serde_json::to_string(&character)?;
@@ -35,12 +37,24 @@ fn create_character_from_modal(modal: Option<MyModal>) -> Option<Character> {
         None => None,
         Some(data) => Some(Character {
             name: data.name,
+            webhook: None,
             emoji: None,
             description: data.description,
             greeting: data.greeting,
             examples: None,
         }),
     }
+}
+
+async fn create_webhook_from_character(
+    ctx: ApplicationContext<'_>,
+    character: &Character,
+) -> Result<Webhook> {
+    let id = ctx.channel_id();
+    let name = &character.name;
+    let http = ctx.serenity_context;
+    let webhook = id.create_webhook(http, name).await?;
+    Ok(webhook)
 }
 
 async fn set_emoji_from_reaction(

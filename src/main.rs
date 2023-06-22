@@ -37,7 +37,8 @@ impl serenity::EventHandler for Handler {
         if is_in_thread && is_user {
             if !message.content.starts_with('.') {
                 let typing = message.channel_id.start_typing(&ctx.http).unwrap();
-                remember_and_add_to_chat(&ctx, &message).await;
+                dbg!(&message);
+                remember_and_add_to_chat(&ctx, &message).await.unwrap();
                 typing.stop().unwrap();
             }
         }

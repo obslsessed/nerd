@@ -1,4 +1,4 @@
-use nerd2::Character;
+use nerd2::{update_webhook_channel_id, Character, Conversation};
 use nerd2::{Context, Error};
 use nerd2::{CHARACTERS_PATH, CHAT_MODEL, CONVERSATIONS_PATH};
 
@@ -18,11 +18,15 @@ use std::io::{Read, Write};
 pub async fn chat(ctx: Context<'_>) -> Result<(), Error> {
     let (character, message_id) = choose_character(ctx).await?;
     let thread = create_thread(&ctx, &message_id, &character.name).await?;
-    new_chat(&character, thread)?;
+    new_chat(&ctx, character, thread).await?;
     Ok(())
 }
 
-pub fn new_chat(character: &Character, id: impl Into<ChannelId>) -> Result<()> {
+pub async fn new_chat(
+    ctx: &Context<'_>,
+    character: Character,
+    id: impl Into<ChannelId>,
+) -> Result<()> {
     let id = id.into();
     let mut chat = CreateChatCompletionRequestArgs::default()
         .model(CHAT_MODEL)
@@ -37,6 +41,10 @@ pub fn new_chat(character: &Character, id: impl Into<ChannelId>) -> Result<()> {
     }
 
     if let Some(greeting) = &character.greeting {
+        let webhook = update_webhook_channel_id(ctx.serenity_context(), &character, id).await?;
+        webhook
+            .execute(ctx, false, |w| w.content(&greeting))
+            .await?;
         let greeting = ChatCompletionRequestMessageArgs::default()
             .role(Role::System)
             .content(greeting)
@@ -44,10 +52,12 @@ pub fn new_chat(character: &Character, id: impl Into<ChannelId>) -> Result<()> {
         chat.messages.push(greeting);
     }
 
+    let conversation = Conversation { character, chat };
+
     let path = format!("{CONVERSATIONS_PATH}/{id}");
     let mut file = File::create(path)?;
 
-    let json = serde_json::to_string(&chat)?;
+    let json = serde_json::to_string(&conversation)?;
     let bytes = json.as_bytes();
     file.write(bytes)?;
     Ok(())

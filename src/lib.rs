@@ -12,9 +12,11 @@ use async_openai::{
     },
     Client,
 };
-use poise::serenity_prelude::Context as SerenityContext;
+use poise::serenity_prelude::json::json;
 use poise::serenity_prelude::{ChannelId, Message, ReactionType};
+use poise::serenity_prelude::{Context as SerenityContext, Webhook};
 use poise::Modal;
+
 use serde::{Deserialize, Serialize};
 
 pub const TEST_SERVER_ID: u64 = 1113998071194456195;
@@ -33,8 +35,15 @@ pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub struct Data {} // User data, which is stored and accessible in all command invocations
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct Conversation {
+    pub character: Character,
+    pub chat: CreateChatCompletionRequest,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Character {
     pub name: String,
+    pub webhook: Option<Webhook>,
     pub emoji: Option<ReactionType>,
     pub description: Option<String>,
     pub greeting: Option<String>,
@@ -69,28 +78,50 @@ pub fn create_directories() -> Result<()> {
     Ok(())
 }
 
-pub async fn remember_and_add_to_chat(ctx: &SerenityContext, message: &Message) {
+pub async fn remember_and_add_to_chat(ctx: &SerenityContext, message: &Message) -> Result<()> {
     let channel = message.channel_id;
     let path = format!("{CONVERSATIONS_PATH}/{channel}");
-    let string = read_to_string(&path).unwrap();
-    let mut chat = serde_json::from_str::<CreateChatCompletionRequest>(&string).unwrap();
+    let string = read_to_string(&path)?;
+    let mut conversation = serde_json::from_str::<Conversation>(&string)?;
     let input = ChatCompletionRequestMessageArgs::default()
         .role(Role::User)
         .content(&message.content)
-        .build()
-        .unwrap();
-    chat.messages.push(input);
-    let response = send_chat(chat.clone()).await.unwrap();
+        .build()?;
+    conversation.chat.messages.push(input);
+    let response = send_chat(conversation.chat.clone()).await?;
     let output = ChatCompletionRequestMessageArgs::default()
         .role(Role::User)
         .content(&response)
-        .build()
-        .unwrap();
-    chat.messages.push(output);
-    dbg!(&chat);
-    let json = serde_json::to_string(&chat).unwrap();
-    write(&path, json).unwrap();
-    message.channel_id.say(&ctx, response).await.unwrap();
+        .build()?;
+    conversation.chat.messages.push(output);
+    let json = serde_json::to_string(&conversation)?;
+    write(&path, json)?;
+
+    let webhook =
+        update_webhook_channel_id(&ctx, &conversation.character, message.channel_id).await?;
+    webhook.execute(ctx, false, |w| w.content(response)).await?;
+    Ok(())
+}
+
+pub async fn update_webhook_channel_id(
+    ctx: &SerenityContext,
+    character: &Character,
+    id: impl Into<ChannelId>,
+) -> Result<Webhook> {
+    let id = id.into();
+    let webhook = character.webhook.clone().unwrap();
+    let webhook_id = webhook.id.into();
+    let token = &webhook.token.unwrap();
+    let value = json!({
+        "channel_id": id,
+    });
+    let map = value.as_object().unwrap();
+    let webhook = ctx
+        .http
+        .edit_webhook_with_token(webhook_id, token, &map)
+        .await?;
+    dbg!(&webhook);
+    Ok(webhook)
 }
 
 pub async fn send_chat(chat: CreateChatCompletionRequest) -> Result<String> {

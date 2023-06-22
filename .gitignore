@@ -1,2 +1,4 @@
 /target/
 /nerd/
+Cargo.lock
+**/*.rs.bk
