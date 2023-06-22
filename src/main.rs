@@ -1,7 +1,12 @@
 mod commands;
 
 use std::fs::read_to_string;
+use std::fs::write;
 
+use async_openai::types::ChatCompletionRequestMessage;
+use async_openai::types::ChatCompletionRequestMessageArgs;
+use async_openai::types::CreateChatCompletionRequest;
+use async_openai::types::Role;
 use commands::chat::chat;
 use commands::create::create;
 
@@ -12,12 +17,15 @@ use nerd2::create_directories;
 use nerd2::get_thread_ids;
 use nerd2::send_chat;
 use nerd2::Error;
+use nerd2::BRAZIL_SERVER_ID;
+use nerd2::CHAT_MODEL;
 use nerd2::{CONVERSATIONS_PATH, NERD_BOT_ID, RYY_BOT_ID};
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::CacheHttp;
 use poise::serenity_prelude::Context;
+use poise::serenity_prelude::GuildId;
 use poise::serenity_prelude::Interaction;
 use poise::serenity_prelude::Reaction;
+use poise::serenity_prelude::Ready;
 
 // TODO: webhooks are fake users
 // TODO: modals for creating/editing characters?
@@ -49,9 +57,24 @@ impl serenity::EventHandler for Handler {
             let typing = message.channel_id.start_typing(&ctx.http).unwrap();
             let id = message.channel_id;
             let path = format!("{CONVERSATIONS_PATH}/{id}");
-            let string = read_to_string(path).unwrap();
-            let chat = serde_json::from_str(&string).unwrap();
-            let response = send_chat(chat).await.unwrap();
+            let string = read_to_string(&path).unwrap();
+            let mut chat = serde_json::from_str::<CreateChatCompletionRequest>(&string).unwrap();
+            let input = ChatCompletionRequestMessageArgs::default()
+                .role(Role::User)
+                .content(&message.content)
+                .build()
+                .unwrap();
+            chat.messages.push(input);
+            let response = send_chat(chat.clone()).await.unwrap();
+            let output = ChatCompletionRequestMessageArgs::default()
+                .role(Role::User)
+                .content(&response)
+                .build()
+                .unwrap();
+            chat.messages.push(output);
+            dbg!(&chat);
+            let json = serde_json::to_string(&chat).unwrap();
+            write(&path, json).unwrap();
             message.channel_id.say(ctx, response).await.unwrap();
             typing.stop().unwrap();
         }
@@ -87,6 +110,9 @@ impl serenity::EventHandler for Handler {
         .await;
     }
 
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        let guild_id = GuildId::from(BRAZIL_SERVER_ID);
+    }
     // For slash commands or edit tracking to work, forward interaction_create and message_update
 }
 

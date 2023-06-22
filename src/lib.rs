@@ -19,6 +19,7 @@ use poise::{
 use serde::{Deserialize, Serialize};
 
 pub const TEST_SERVER_ID: u64 = 1113998071194456195;
+pub const BRAZIL_SERVER_ID: u64 = 849378682741194752;
 pub const NERD_BOT_ID: u64 = 1118700646791647262;
 pub const RYY_BOT_ID: u64 = 672957277032153108;
 pub const CHAT_MODEL: &str = "gpt-3.5-turbo-0613";
@@ -59,29 +60,6 @@ pub fn create_directories() -> Result<()> {
             }
         };
     }
-    Ok(())
-}
-
-pub fn new_chat(character: &Character, thread_id: ChannelId) -> Result<()> {
-    let chat = match &character.prompt {
-        None => CreateChatCompletionRequestArgs::default()
-            .model(CHAT_MODEL)
-            .build()?,
-        Some(prompt) => CreateChatCompletionRequestArgs::default()
-            .model(CHAT_MODEL)
-            .messages([ChatCompletionRequestMessageArgs::default()
-                .role(Role::System)
-                .content(prompt)
-                .build()?])
-            .build()?,
-    };
-
-    let path = format!("{CONVERSATIONS_PATH}/{thread_id}");
-    let mut file = File::create(path)?;
-
-    let json = serde_json::to_string(&chat)?;
-    let bytes = json.as_bytes();
-    file.write(bytes)?;
     Ok(())
 }
 

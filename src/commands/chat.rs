@@ -1,10 +1,14 @@
 use anyhow::Result;
-use async_openai::types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequest, Role};
-use nerd2::{get_characters, new_chat, send_chat};
+use async_openai::types::{
+    ChatCompletionRequestMessageArgs, CreateChatCompletionRequest, CreateChatCompletionRequestArgs,
+    Role,
+};
+use nerd2::{get_characters, send_chat, CHAT_MODEL};
 use nerd2::{Character, Context, Error};
 use nerd2::{CHARACTERS_PATH, CONVERSATIONS_PATH};
 use poise::serenity_prelude::{self as serenity, CacheHttp, ChannelId, GuildChannel, MessageId};
-use std::fs::{read_to_string, write};
+use std::fs::{read_to_string, write, File};
+use std::io::Write;
 
 /// chat
 #[poise::command(slash_command, prefix_command)]
@@ -13,11 +17,29 @@ pub async fn chat(ctx: Context<'_>) -> Result<(), Error> {
     let thread = create_thread(&ctx, &message_id, &character.name).await?;
     let thread_id = thread.id;
     new_chat(&character, thread_id)?;
-    let reply = thread.await_reply(ctx).await.unwrap(); // TODO: make it not unwrap
-    let reply_text = &reply.content;
-    dbg!(&reply);
-    handle_chat(ctx, reply_text, thread, character).await?;
+    Ok(())
+}
 
+pub fn new_chat(character: &Character, thread_id: ChannelId) -> Result<()> {
+    let chat = match &character.prompt {
+        None => CreateChatCompletionRequestArgs::default()
+            .model(CHAT_MODEL)
+            .build()?,
+        Some(prompt) => CreateChatCompletionRequestArgs::default()
+            .model(CHAT_MODEL)
+            .messages([ChatCompletionRequestMessageArgs::default()
+                .role(Role::System)
+                .content(prompt)
+                .build()?])
+            .build()?,
+    };
+
+    let path = format!("{CONVERSATIONS_PATH}/{thread_id}");
+    let mut file = File::create(path)?;
+
+    let json = serde_json::to_string(&chat)?;
+    let bytes = json.as_bytes();
+    file.write(bytes)?;
     Ok(())
 }
 
