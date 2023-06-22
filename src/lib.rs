@@ -5,7 +5,10 @@ use std::{
 };
 
 use anyhow::Result;
-use async_openai::{types::CreateChatCompletionRequest, Client};
+use async_openai::{
+    types::{ChatChoice, ChatCompletionResponseMessage, CreateChatCompletionRequest},
+    Client,
+};
 use poise::{
     serenity_prelude::{ChannelId, ReactionType},
     Modal,
@@ -65,9 +68,24 @@ pub fn create_directories() -> Result<()> {
 }
 
 pub async fn send_chat(chat: CreateChatCompletionRequest) -> Result<String> {
+    let error_text = "NEJ!!!!! DET HÄNDE NÅGONTING FEL!!!!!!!!! `response.choices.pop()` gav None i `send_chat()`".into();
+    let error_message = ChatCompletionResponseMessage {
+        role: async_openai::types::Role::Assistant,
+        content: error_text,
+    };
+    let error_response = ChatChoice {
+        message: error_message,
+        index: 0,
+        finish_reason: None,
+    };
+
     let client = Client::new();
-    let response = client.chat().create(chat).await?;
-    let content = response.choices.last().unwrap().message.content.clone(); // TODO: fix this mess
+    let mut response = client.chat().create(chat).await?;
+    let last = response.choices.pop().unwrap_or_else(|| {
+        dbg!(&response);
+        error_response
+    });
+    let content = last.message.content;
     Ok(content)
 }
 
