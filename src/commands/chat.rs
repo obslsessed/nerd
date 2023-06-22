@@ -24,18 +24,25 @@ pub async fn chat(ctx: Context<'_>) -> Result<(), Error> {
 
 pub fn new_chat(character: &Character, id: impl Into<ChannelId>) -> Result<()> {
     let id = id.into();
-    let chat = match &character.description {
-        None => CreateChatCompletionRequestArgs::default()
-            .model(CHAT_MODEL)
-            .build()?,
-        Some(description) => CreateChatCompletionRequestArgs::default()
-            .model(CHAT_MODEL)
-            .messages([ChatCompletionRequestMessageArgs::default()
-                .role(Role::System)
-                .content(description)
-                .build()?])
-            .build()?,
-    };
+    let mut chat = CreateChatCompletionRequestArgs::default()
+        .model(CHAT_MODEL)
+        .build()?;
+
+    if let Some(description) = &character.description {
+        let description = ChatCompletionRequestMessageArgs::default()
+            .role(Role::System)
+            .content(description)
+            .build()?;
+        chat.messages.push(description);
+    }
+
+    if let Some(greeting) = &character.greeting {
+        let greeting = ChatCompletionRequestMessageArgs::default()
+            .role(Role::System)
+            .content(greeting)
+            .build()?;
+        chat.messages.push(greeting);
+    }
 
     let path = format!("{CONVERSATIONS_PATH}/{id}");
     let mut file = File::create(path)?;
