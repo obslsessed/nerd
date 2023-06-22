@@ -1,24 +1,26 @@
 mod commands;
 
+use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::fs::write;
 
-use async_openai::types::ChatCompletionRequestMessage;
 use async_openai::types::ChatCompletionRequestMessageArgs;
 use async_openai::types::CreateChatCompletionRequest;
 use async_openai::types::Role;
+
 use commands::chat::chat;
 use commands::create::create;
-
-use anyhow::Result;
+use commands::register::register;
 use commands::todo::paginate;
 use commands::todo::say;
+
+use anyhow::Result;
 use nerd2::create_directories;
 use nerd2::get_thread_ids;
 use nerd2::send_chat;
 use nerd2::Error;
 use nerd2::BRAZIL_SERVER_ID;
-use nerd2::CHAT_MODEL;
+use nerd2::OWNER_USER_ID;
 use nerd2::{CONVERSATIONS_PATH, NERD_BOT_ID, RYY_BOT_ID};
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::Context;
@@ -26,6 +28,7 @@ use poise::serenity_prelude::GuildId;
 use poise::serenity_prelude::Interaction;
 use poise::serenity_prelude::Reaction;
 use poise::serenity_prelude::Ready;
+use poise::serenity_prelude::UserId;
 
 // TODO: webhooks are fake users
 // TODO: modals for creating/editing characters?
@@ -38,17 +41,6 @@ struct Handler {
 #[serenity::async_trait]
 impl serenity::EventHandler for Handler {
     async fn message(&self, ctx: Context, message: serenity::Message) {
-        // FrameworkContext contains all data that poise::Framework usually manages
-        // let shard_manager = (*self.shard_manager.lock().unwrap()).clone().unwrap();
-        // let framework_data = poise::FrameworkContext {
-        //     bot_id: serenity::UserId(NERD_BOT_ID),
-        //     options: &self.options,
-        //     user_data: &(),
-        //     shard_manager: &shard_manager,
-        // };
-
-        // poise::dispatch_event(framework_data, &ctx, &poise::Event::Message { new_message }).await;
-
         println!("running message");
         let threads = get_thread_ids().unwrap();
         let is_in_thread = threads.iter().any(|t| t == &message.channel_id);
@@ -75,9 +67,26 @@ impl serenity::EventHandler for Handler {
             dbg!(&chat);
             let json = serde_json::to_string(&chat).unwrap();
             write(&path, json).unwrap();
-            message.channel_id.say(ctx, response).await.unwrap();
+            message.channel_id.say(&ctx, response).await.unwrap();
             typing.stop().unwrap();
         }
+        // FrameworkContext contains all data that poise::Framework usually manages
+        let shard_manager = (*self.shard_manager.lock().unwrap()).clone().unwrap();
+        let framework_data = poise::FrameworkContext {
+            bot_id: serenity::UserId(NERD_BOT_ID),
+            options: &self.options,
+            user_data: &(),
+            shard_manager: &shard_manager,
+        };
+
+        poise::dispatch_event(
+            framework_data,
+            &ctx,
+            &poise::Event::Message {
+                new_message: message,
+            },
+        )
+        .await;
     }
 
     async fn reaction_add(&self, ctx: Context, rct: Reaction) {
@@ -119,11 +128,13 @@ impl serenity::EventHandler for Handler {
 #[tokio::main]
 async fn main() -> Result<()> {
     create_directories()?;
-    let commands = vec![chat(), create(), paginate(), say()];
+    let owner_id = UserId::from(OWNER_USER_ID);
+    let commands = vec![chat(), create(), paginate(), say(), register()];
     let token = std::env::var("DISCORD_TOKEN")?;
     let mut handler = Handler {
         options: poise::FrameworkOptions {
             commands,
+            owners: HashSet::from([(owner_id)]),
             ..Default::default()
         },
         shard_manager: std::sync::Mutex::new(None),

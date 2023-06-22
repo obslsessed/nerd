@@ -22,6 +22,7 @@ pub const TEST_SERVER_ID: u64 = 1113998071194456195;
 pub const BRAZIL_SERVER_ID: u64 = 849378682741194752;
 pub const NERD_BOT_ID: u64 = 1118700646791647262;
 pub const RYY_BOT_ID: u64 = 672957277032153108;
+pub const OWNER_USER_ID: u64 = 284834416633577472;
 pub const CHAT_MODEL: &str = "gpt-3.5-turbo-0613";
 pub const DATABASE_PATH: &str = "nerd";
 pub const CHARACTERS_PATH: &str = "nerd/characters";
